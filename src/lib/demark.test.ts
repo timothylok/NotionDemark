@@ -1,4 +1,4 @@
-import { computeSetup, computeTDST } from './demark'
+import { computeSetup, computeTDST, computeTDSTDistance } from './demark'
 import { Bar, SetupState } from '../types'
 
 function bar(close: number, high: number, low: number): Bar {
@@ -141,6 +141,51 @@ describe('computeTDST — buy setup', () => {
   test('close exactly at level is not broken', () => {
     const result = computeTDST(buyBars(17), makeSetup('buy', 0, 8))
     expect(result!.broken).toBe(false)
+  })
+})
+
+// ─── computeTDSTDistance ─────────────────────────────────────────────────────
+
+describe('computeTDSTDistance', () => {
+  test('sell setup, respected, far → positive pct and status far', () => {
+    // level=100, close=90 → dist = (100-90)/100*100 = 10%
+    const r = computeTDSTDistance('sell', 90, 100, false)
+    expect(r.distancePct).toBeCloseTo(10)
+    expect(r.status).toBe('far')
+  })
+
+  test('sell setup, respected, near → status near', () => {
+    // level=100, close=99.5 → dist = 0.5%
+    const r = computeTDSTDistance('sell', 99.5, 100, false)
+    expect(r.distancePct).toBeCloseTo(0.5)
+    expect(r.status).toBe('near')
+  })
+
+  test('buy setup, respected → positive pct', () => {
+    // level=80, close=90 → dist = (90-80)/80*100 = 12.5%
+    const r = computeTDSTDistance('buy', 90, 80, false)
+    expect(r.distancePct).toBeCloseTo(12.5)
+    expect(r.status).toBe('far')
+  })
+
+  test('broken → distancePct 0, status broken', () => {
+    const r = computeTDSTDistance('sell', 105, 100, true)
+    expect(r.distancePct).toBe(0)
+    expect(r.status).toBe('broken')
+  })
+
+  test('boundary: exactly 1% → approaching', () => {
+    // level=100, close=99 → dist = 1%
+    const r = computeTDSTDistance('sell', 99, 100, false)
+    expect(r.distancePct).toBeCloseTo(1)
+    expect(r.status).toBe('approaching')
+  })
+
+  test('boundary: exactly 3% → far', () => {
+    // level=100, close=97 → dist = 3%
+    const r = computeTDSTDistance('sell', 97, 100, false)
+    expect(r.distancePct).toBeCloseTo(3)
+    expect(r.status).toBe('far')
   })
 })
 

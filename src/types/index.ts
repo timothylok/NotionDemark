@@ -56,6 +56,8 @@ export interface TickerSignal {
   setup: SetupState
   countdown: CountdownState
   tdst: TDSTLevel | null
+  tdstDistancePct?: number
+  tdstStatus?: 'near' | 'approaching' | 'far' | 'broken'
   trend: 'up' | 'down' | 'neutral'
   delta: SignalDelta | null
   avgCost: number

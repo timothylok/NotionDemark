@@ -74,6 +74,20 @@ export function classifyTrend(
   return 'neutral'
 }
 
+export function computeTDSTDistance(
+  direction: 'buy' | 'sell',
+  close: number,
+  level: number,
+  broken: boolean,
+): { distancePct: number; status: 'near' | 'approaching' | 'far' | 'broken' } {
+  if (broken) return { distancePct: 0, status: 'broken' }
+  const distancePct = direction === 'sell'
+    ? (level - close) / level * 100
+    : (close - level) / level * 100
+  const status = distancePct < 1 ? 'near' : distancePct < 3 ? 'approaching' : 'far'
+  return { distancePct, status }
+}
+
 export function computeCountdown(bars: Bar[], setup: SetupState): CountdownState {
   if (!setup.completed) {
     return { direction: 'none', count: 0, completed: false }

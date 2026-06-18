@@ -19,12 +19,14 @@ export async function postSummary(signals: TickerSignal[]): Promise<void> {
       countdownSuffix = `  (was ${d.prevCountdownCount}/13)`
     }
 
-    let tdstStatus = ''
+    let tdstLine = ''
     if (s.tdst) {
-      const dist = ((s.close - s.tdst.level) / s.tdst.level * 100).toFixed(1)
       const label = s.tdst.direction === 'buy' ? 'Support' : 'Resistance'
-      const status = d?.tdstNewlyBroken ? 'BROKE TODAY' : s.tdst.broken ? 'broken' : 'respected'
-      tdstStatus = `\n  • TDST ${label}: ${s.tdst.level.toFixed(2)} (${status}, dist ${dist}%)`
+      const statusLabel = d?.tdstNewlyBroken ? 'BROKE TODAY' : (s.tdstStatus ?? 'broken')
+      const distPart = s.tdstStatus !== 'broken' && s.tdstDistancePct !== undefined
+        ? ` (+${s.tdstDistancePct.toFixed(1)}%)`
+        : ''
+      tdstLine = `\n  • TDST ${label}: ${s.tdst.level.toFixed(2)} — ${statusLabel}${distPart}`
     }
 
     const trendLabel = s.trend === 'up' ? 'Up' : s.trend === 'down' ? 'Down' : 'Neutral'
@@ -35,7 +37,7 @@ export async function postSummary(signals: TickerSignal[]): Promise<void> {
       `  • Trend: ${trendLabel}${trendSuffix}\n` +
       `  • Setup: ${s.setup.direction} ${s.setup.count}/9${setupSuffix}\n` +
       `  • Countdown: ${s.countdown.count}/13${countdownSuffix}` +
-      tdstStatus
+      tdstLine
     )
   })
 
