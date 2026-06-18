@@ -5,7 +5,7 @@ export function computeAvgCost(lots: Lot[]): number {
   let totalQty = 0
 
   for (const lot of lots) {
-    totalCost += lot.buyPrice * lot.quantity + lot.transFee
+    totalCost += lot.buyPrice + lot.transFee
     totalQty += lot.quantity
   }
 
