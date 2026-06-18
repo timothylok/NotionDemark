@@ -1,21 +1,35 @@
-import yahooFinance from 'yahoo-finance2'
 import { Bar } from '../types'
 
+interface AlphaVantageDaily {
+  'Time Series (Daily)': Record<string, {
+    '1. open': string
+    '2. high': string
+    '3. low': string
+    '4. close': string
+    '5. volume': string
+  }>
+}
+
 export async function getHistory(ticker: string): Promise<Bar[]> {
-  const period1 = new Date()
-  period1.setDate(period1.getDate() - 300)
+  const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${ticker}&outputsize=full&apikey=${process.env.ALPHA_VANTAGE_API_KEY}`
+  const res = await fetch(url)
+  const json = await res.json() as AlphaVantageDaily
 
-  const result = await yahooFinance.chart(ticker, {
-    period1: period1.toISOString().slice(0, 10),
-    interval: '1d',
-  })
+  const series = json['Time Series (Daily)']
+  if (!series) throw new Error(`No data from Alpha Vantage for ${ticker}`)
 
-  return (result.quotes ?? []).map(r => ({
-    date: r.date.toISOString(),
-    open: r.open ?? 0,
-    high: r.high ?? 0,
-    low: r.low ?? 0,
-    close: r.close ?? 0,
-    volume: r.volume ?? 0,
-  }))
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - 300)
+
+  return Object.entries(series)
+    .filter(([date]) => new Date(date) >= cutoff)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, v]) => ({
+      date,
+      open: parseFloat(v['1. open']),
+      high: parseFloat(v['2. high']),
+      low: parseFloat(v['3. low']),
+      close: parseFloat(v['4. close']),
+      volume: parseInt(v['5. volume'], 10),
+    }))
 }
