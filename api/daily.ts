@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { getLots, insertDailySignal } from '../src/lib/notion'
 import { getHistory } from '../src/lib/prices'
-import { computeSetup, computeCountdown, computeTDST, computeTDSTDistance, computeSignalStrength, computeReversalProbability, computeAlerts, ema, classifyTrend } from '../src/lib/demark'
+import { computeSetup, computeCountdown, computeTDST, computeTDSTDistance, computeSignalStrength, computeReversalProbability, computeAlerts, computeATR, classifyVolatility, ema, classifyTrend } from '../src/lib/demark'
 import { computeAvgCost } from '../src/utils/groupLots'
 import { postSummary, postAlerts } from '../src/lib/discord'
 import type { TickerSignal, SignalDelta, PrevSnapshot } from '../src/types'
@@ -79,6 +79,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const pnlPct = avgCost === 0 ? 0 : ((close - avgCost) / avgCost) * 100
 
+    const atr = computeATR(bars)
+    const atrPct = close > 0 ? (atr / close) * 100 : 0
+    const volatility = classifyVolatility(atrPct)
+
     const tdstDist = tdst ? computeTDSTDistance(tdst.direction, close, tdst.level, tdst.broken) : null
     const signalStrength = computeSignalStrength(setup, countdown, trend, tdstDist?.status)
     const reversalProbability = computeReversalProbability(
@@ -89,6 +93,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ticker, close, setup, countdown, tdst,
       tdstDistancePct: tdstDist?.distancePct,
       tdstStatus: tdstDist?.status,
+      atrPct, volatility,
       signalStrength, reversalProbability, trend, delta, avgCost, pnlPct, summary: '',
     }
 

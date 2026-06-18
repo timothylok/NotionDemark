@@ -139,6 +139,35 @@ export function computeReversalProbability(
   return Number(Math.max(0, Math.min(p, 1)).toFixed(2))
 }
 
+export function computeATR(bars: Bar[], period = 14): number {
+  if (bars.length < 2) return 0
+  let atr = 0
+  const seedLen = Math.min(period, bars.length - 1)
+  for (let i = 1; i <= seedLen; i++) {
+    atr += Math.max(
+      bars[i].high - bars[i].low,
+      Math.abs(bars[i].high - bars[i - 1].close),
+      Math.abs(bars[i].low  - bars[i - 1].close),
+    )
+  }
+  atr /= seedLen
+  for (let i = period + 1; i < bars.length; i++) {
+    const tr = Math.max(
+      bars[i].high - bars[i].low,
+      Math.abs(bars[i].high - bars[i - 1].close),
+      Math.abs(bars[i].low  - bars[i - 1].close),
+    )
+    atr = (atr * (period - 1) + tr) / period
+  }
+  return atr
+}
+
+export function classifyVolatility(atrPct: number): 'low' | 'normal' | 'high' {
+  if (atrPct < 1) return 'low'
+  if (atrPct < 3) return 'normal'
+  return 'high'
+}
+
 export function computeAlerts(signal: TickerSignal, prev: PrevSnapshot): string[] {
   const alerts: string[] = []
   const { countdown, setup, tdstStatus, trend, reversalProbability, close } = signal

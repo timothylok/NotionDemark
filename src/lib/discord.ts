@@ -47,6 +47,9 @@ export async function postSummary(signals: TickerSignal[]): Promise<void> {
     const trendLabel = s.trend === 'up' ? 'Up' : s.trend === 'down' ? 'Down' : 'Neutral'
     const trendSuffix = d?.trendChanged ? `  (was ${d.prevTrend})` : ''
 
+    const volLabel = s.volatility === 'low' ? 'Low' : s.volatility === 'high' ? 'High' : 'Normal'
+    const volLine = `\n  • Volatility: ${volLabel} (ATR ${s.atrPct.toFixed(1)}%)`
+
     const score = s.signalStrength
     const scoreLabel = score >= 80 ? 'High Conviction' : score >= 60 ? 'Strong' : score >= 30 ? 'Moderate' : 'Low'
     const scoreDir = s.setup.direction !== 'none' ? ` ${s.setup.direction === 'buy' ? 'Buy' : 'Sell'}` : ''
@@ -57,6 +60,7 @@ export async function postSummary(signals: TickerSignal[]): Promise<void> {
       `  • P(reversal): ${s.reversalProbability.toFixed(2)}\n` +
       `  • Setup: ${s.setup.direction} ${s.setup.count}/9${setupSuffix}\n` +
       `  • Countdown: ${s.countdown.count}/13${countdownSuffix}` +
+      volLine +
       tdstLine
     )
   })

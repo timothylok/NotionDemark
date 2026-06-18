@@ -1,4 +1,4 @@
-import { computeSetup, computeTDST, computeTDSTDistance, computeSignalStrength, computeReversalProbability, computeAlerts } from './demark'
+import { computeSetup, computeTDST, computeTDSTDistance, computeSignalStrength, computeReversalProbability, computeAlerts, computeATR, classifyVolatility } from './demark'
 import { Bar, SetupState, TickerSignal, PrevSnapshot } from '../types'
 
 function bar(close: number, high: number, low: number): Bar {
@@ -235,6 +235,41 @@ describe('computeSignalStrength', () => {
   })
 })
 
+// ─── computeATR / classifyVolatility ─────────────────────────────────────────
+
+describe('computeATR', () => {
+  function flatBars(n: number, range: number, close: number): Bar[] {
+    return Array.from({ length: n }, () => ({ date: '', open: close, high: close + range / 2, low: close - range / 2, close, volume: 0 }))
+  }
+
+  test('returns 0 for fewer than 2 bars', () => {
+    expect(computeATR([])).toBe(0)
+    expect(computeATR([{ date: '', open: 100, high: 101, low: 99, close: 100, volume: 0 }])).toBe(0)
+  })
+
+  test('flat bars produce ATR equal to the constant range', () => {
+    const bars = flatBars(20, 2, 100)
+    expect(computeATR(bars, 14)).toBeCloseTo(2, 5)
+  })
+
+  test('ATR is positive for bars with non-zero range', () => {
+    const bars = flatBars(20, 3, 50)
+    expect(computeATR(bars, 14)).toBeGreaterThan(0)
+  })
+})
+
+describe('classifyVolatility', () => {
+  test('< 1% → low', () => expect(classifyVolatility(0.5)).toBe('low'))
+  test('1% – 3% → normal', () => {
+    expect(classifyVolatility(1.0)).toBe('normal')
+    expect(classifyVolatility(1.5)).toBe('normal')
+  })
+  test('>= 3% → high', () => {
+    expect(classifyVolatility(3.0)).toBe('high')
+    expect(classifyVolatility(4.0)).toBe('high')
+  })
+})
+
 // ─── computeAlerts ───────────────────────────────────────────────────────────
 
 describe('computeAlerts', () => {
@@ -247,6 +282,8 @@ describe('computeAlerts', () => {
       tdst: null,
       tdstStatus: 'far',
       tdstDistancePct: 5,
+      atrPct: 1.5,
+      volatility: 'normal',
       signalStrength: 50,
       reversalProbability: 0.5,
       trend: 'up',
