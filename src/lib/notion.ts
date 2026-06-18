@@ -11,6 +11,7 @@ function text(page: any, prop: string): string {
   const p = page.properties[prop]
   if (p?.title) return p.title[0]?.plain_text ?? ''
   if (p?.rich_text) return p.rich_text[0]?.plain_text ?? ''
+  if (p?.select) return p.select?.name ?? ''
   return ''
 }
 
