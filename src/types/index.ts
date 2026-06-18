@@ -37,12 +37,24 @@ export interface CountdownState {
   completed: boolean
 }
 
+export interface SignalDelta {
+  setupChanged: boolean
+  setupCompleted: boolean
+  countdownChanged: boolean
+  countdownCompleted: boolean
+  tdstNewlyBroken: boolean
+  prevSetupDirection: 'buy' | 'sell' | 'none'
+  prevSetupCount: number
+  prevCountdownCount: number
+}
+
 export interface TickerSignal {
   ticker: string
   close: number
   setup: SetupState
   countdown: CountdownState
   tdst: TDSTLevel | null
+  delta: SignalDelta | null
   avgCost: number
   pnlPct: number
   summary: string

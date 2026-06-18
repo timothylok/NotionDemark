@@ -2,15 +2,36 @@ import { TickerSignal } from '../types'
 
 export async function postSummary(signals: TickerSignal[]): Promise<void> {
   const lines = signals.map(s => {
-    const tdstLine = s.tdst
-      ? `\n  • TDST ${s.tdst.direction === 'buy' ? 'Support' : 'Resistance'}: ${s.tdst.level.toFixed(2)} ` +
-        `(${s.tdst.broken ? 'broken' : 'respected'}, dist ${((s.close - s.tdst.level) / s.tdst.level * 100).toFixed(1)}%)`
-      : ''
+    const d = s.delta
+
+    let setupSuffix = ''
+    if (d?.setupCompleted) {
+      setupSuffix = '  <- COMPLETED'
+    } else if (d?.setupChanged) {
+      const prevDir = d.prevSetupDirection !== s.setup.direction ? `${d.prevSetupDirection} ` : ''
+      setupSuffix = `  (was ${prevDir}${d.prevSetupCount}/9)`
+    }
+
+    let countdownSuffix = ''
+    if (d?.countdownCompleted) {
+      countdownSuffix = '  <- COMPLETED'
+    } else if (d?.countdownChanged) {
+      countdownSuffix = `  (was ${d.prevCountdownCount}/13)`
+    }
+
+    let tdstStatus = ''
+    if (s.tdst) {
+      const dist = ((s.close - s.tdst.level) / s.tdst.level * 100).toFixed(1)
+      const label = s.tdst.direction === 'buy' ? 'Support' : 'Resistance'
+      const status = d?.tdstNewlyBroken ? 'BROKE TODAY' : s.tdst.broken ? 'broken' : 'respected'
+      tdstStatus = `\n  • TDST ${label}: ${s.tdst.level.toFixed(2)} (${status}, dist ${dist}%)`
+    }
+
     return (
       `${s.ticker}: Close ${s.close.toFixed(2)} (${s.pnlPct.toFixed(2)}%) vs Avg ${s.avgCost.toFixed(2)}\n` +
-      `  • Setup: ${s.setup.direction} ${s.setup.count}/9\n` +
-      `  • Countdown: ${s.countdown.count}/13` +
-      tdstLine
+      `  • Setup: ${s.setup.direction} ${s.setup.count}/9${setupSuffix}\n` +
+      `  • Countdown: ${s.countdown.count}/13${countdownSuffix}` +
+      tdstStatus
     )
   })
 
