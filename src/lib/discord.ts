@@ -1,5 +1,20 @@
 import { TickerSignal } from '../types'
 
+export async function postAlerts(allAlerts: { ticker: string; alerts: string[] }[]): Promise<void> {
+  const firing = allAlerts.filter(a => a.alerts.length > 0)
+  if (firing.length === 0) return
+
+  const today = new Date().toISOString().slice(0, 10)
+  const lines = firing.map(a => `${a.ticker}: ${a.alerts.join(' | ')}`)
+  await fetch(process.env.DISCORD_WEBHOOK_URL!, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      content: `🔔 DeMark Alerts – ${today}\n\n${lines.join('\n')}`,
+    }),
+  })
+}
+
 export async function postSummary(signals: TickerSignal[]): Promise<void> {
   const lines = signals.map(s => {
     const d = s.delta

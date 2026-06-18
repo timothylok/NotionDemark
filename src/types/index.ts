@@ -50,6 +50,16 @@ export interface SignalDelta {
   prevTrend: 'up' | 'down' | 'neutral'
 }
 
+export interface PrevSnapshot {
+  countdownCount: number
+  countdownCompleted: boolean
+  setupCompleted: boolean
+  tdstStatus?: 'near' | 'approaching' | 'far' | 'broken'
+  trend: 'up' | 'down' | 'neutral'
+  reversalProbability: number
+  prevClose: number
+}
+
 export interface TickerSignal {
   ticker: string
   close: number

@@ -1,5 +1,5 @@
-import { computeSetup, computeTDST, computeTDSTDistance, computeSignalStrength, computeReversalProbability } from './demark'
-import { Bar, SetupState } from '../types'
+import { computeSetup, computeTDST, computeTDSTDistance, computeSignalStrength, computeReversalProbability, computeAlerts } from './demark'
+import { Bar, SetupState, TickerSignal, PrevSnapshot } from '../types'
 
 function bar(close: number, high: number, low: number): Bar {
   return { date: '', open: close, high, low, close, volume: 0 }
@@ -232,6 +232,76 @@ describe('computeSignalStrength', () => {
     expect(withApproaching).toBeGreaterThan(withNone)
     expect(withNone).toBe(40)
     expect(withApproaching).toBe(50)
+  })
+})
+
+// ─── computeAlerts ───────────────────────────────────────────────────────────
+
+describe('computeAlerts', () => {
+  function makeSignal(overrides: Partial<TickerSignal> = {}): TickerSignal {
+    return {
+      ticker: 'TEST',
+      close: 100,
+      setup: { direction: 'sell', count: 9, completed: true },
+      countdown: { direction: 'sell', count: 8, completed: false },
+      tdst: null,
+      tdstStatus: 'far',
+      tdstDistancePct: 5,
+      signalStrength: 50,
+      reversalProbability: 0.5,
+      trend: 'up',
+      delta: null,
+      avgCost: 90,
+      pnlPct: 11,
+      summary: '',
+      ...overrides,
+    }
+  }
+
+  function makePrev(overrides: Partial<PrevSnapshot> = {}): PrevSnapshot {
+    return {
+      countdownCount: 7,
+      countdownCompleted: false,
+      setupCompleted: true,
+      tdstStatus: 'far',
+      trend: 'up',
+      reversalProbability: 0.5,
+      prevClose: 100,
+      ...overrides,
+    }
+  }
+
+  test('countdown crossing 12 fires alert', () => {
+    const signal = makeSignal({ countdown: { direction: 'sell', count: 12, completed: false } })
+    const prev = makePrev({ countdownCount: 11 })
+    const alerts = computeAlerts(signal, prev)
+    expect(alerts.some(a => a.includes('Countdown 12/13'))).toBe(true)
+  })
+
+  test('countdown already ≥12 yesterday does not re-fire', () => {
+    const signal = makeSignal({ countdown: { direction: 'sell', count: 12, completed: false } })
+    const prev = makePrev({ countdownCount: 12 })
+    const alerts = computeAlerts(signal, prev)
+    expect(alerts.some(a => a.includes('Countdown'))).toBe(false)
+  })
+
+  test('TDST newly near fires alert', () => {
+    const signal = makeSignal({ tdstStatus: 'near' })
+    const prev = makePrev({ tdstStatus: 'approaching' })
+    const alerts = computeAlerts(signal, prev)
+    expect(alerts.some(a => a.includes('TDST near'))).toBe(true)
+  })
+
+  test('trend flip fires alert with new trend', () => {
+    const signal = makeSignal({ trend: 'down' })
+    const prev = makePrev({ trend: 'up' })
+    const alerts = computeAlerts(signal, prev)
+    expect(alerts.some(a => a.includes('Trend flip') && a.includes('down'))).toBe(true)
+  })
+
+  test('no events → empty array', () => {
+    const alerts = computeAlerts(makeSignal(), makePrev())
+    expect(alerts).toHaveLength(0)
   })
 })
 

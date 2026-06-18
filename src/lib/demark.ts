@@ -1,4 +1,4 @@
-import { Bar, SetupState, CountdownState, TDSTLevel } from '../types'
+import { Bar, SetupState, CountdownState, TDSTLevel, TickerSignal, PrevSnapshot } from '../types'
 
 export function computeSetup(bars: Bar[]): SetupState {
   let buyCount = 0, sellCount = 0
@@ -137,6 +137,40 @@ export function computeReversalProbability(
   if (countdownCompleted) p += 0.10
 
   return Number(Math.max(0, Math.min(p, 1)).toFixed(2))
+}
+
+export function computeAlerts(signal: TickerSignal, prev: PrevSnapshot): string[] {
+  const alerts: string[] = []
+  const { countdown, setup, tdstStatus, trend, reversalProbability, close } = signal
+
+  if (countdown.count >= 12 && prev.countdownCount < 12)
+    alerts.push(`🔥 Countdown ${countdown.count}/13 – reversal imminent`)
+
+  if (countdown.completed && !prev.countdownCompleted)
+    alerts.push('🔥 Countdown 13/13 – exhaustion completed')
+
+  if (tdstStatus === 'near' && prev.tdstStatus !== 'near')
+    alerts.push('⚠️ TDST near – price testing level')
+
+  if (tdstStatus === 'broken' && prev.tdstStatus !== 'broken')
+    alerts.push('❌ TDST broken – level failed')
+
+  if (trend !== prev.trend)
+    alerts.push(`📈 Trend flip → ${trend}`)
+
+  if (setup.completed && !prev.setupCompleted)
+    alerts.push('🟩 Setup 9 completed')
+
+  if (reversalProbability > 0.75 && prev.reversalProbability <= 0.75)
+    alerts.push(`🟦 Reversal probability spike (${reversalProbability.toFixed(2)})`)
+
+  if (prev.prevClose > 0) {
+    const dailyMove = (close - prev.prevClose) / prev.prevClose * 100
+    if (Math.abs(dailyMove) > 5)
+      alerts.push(`🟧 Large daily move (${dailyMove > 0 ? '+' : ''}${dailyMove.toFixed(1)}%)`)
+  }
+
+  return alerts
 }
 
 export function computeCountdown(bars: Bar[], setup: SetupState): CountdownState {
