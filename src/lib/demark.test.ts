@@ -1,0 +1,174 @@
+import { computeSetup, computeTDST } from './demark'
+import { Bar, SetupState } from '../types'
+
+function bar(close: number, high: number, low: number): Bar {
+  return { date: '', open: close, high, low, close, volume: 0 }
+}
+
+function makeSetup(dir: 'buy' | 'sell', start: number, end: number): SetupState {
+  return {
+    direction: dir,
+    count: 9,
+    completed: true,
+    lastCompletedDirection: dir,
+    lastCompletedStart: start,
+    lastCompletedEnd: end,
+  }
+}
+
+// 9 bars where each close is lower than 4 bars prior, starting at index `offset`
+// Produces bars[offset..offset+8] as a buy setup.
+// Pre-pads with `offset` neutral bars so indices align.
+function buySetupBars(offset: number): Bar[] {
+  const neutral = bar(100, 105, 95)
+  const pre = Array(offset).fill(neutral)
+  // Closes: 100, 99, 98, 97, 96, 95, 94, 93, 92 — each < close[i-4]
+  const setup = [100, 99, 98, 97, 96, 95, 94, 93, 92].map((c, idx) => {
+    const isBar14 = idx <= 3
+    return bar(c, isBar14 ? 30 + idx : 105, isBar14 ? 20 - idx : 91)
+  })
+  return [...pre, ...setup]
+}
+
+// ─── computeSetup index tracking ─────────────────────────────────────────────
+
+describe('computeSetup — index tracking', () => {
+  test('records lastCompleted* after a buy setup of 9 bars', () => {
+    // Bars 0..3 are neutral (offset=4 not needed — setup starts at index 4
+    // because the comparison needs i-4). Build: 4 neutral + 9 setup bars.
+    const neutral = bar(100, 105, 95)
+    // Close pattern: descending by 1 each bar. close[i] < close[i-4] requires
+    // the drop to persist across 4 bars, so step size must be consistent.
+    const closes = [100, 99, 98, 97, 96, 95, 94, 93, 92, 91, 88, 87, 86]
+    //              ^0   ^1   ^2   ^3   ^4   ^5   ^6   ^7   ^8  ^9  ^10 ^11 ^12
+    // At i=4: 96 < 100 ✓, at i=5: 95 < 99 ✓, ... at i=12: 86 < 90? 86 < 90 ✓
+    const bars = closes.map(c => bar(c, c + 5, c - 5))
+
+    const result = computeSetup(bars)
+
+    expect(result.lastCompletedDirection).toBe('buy')
+    // Setup bar 1 is at index 4 (first bar where close < close[i-4])
+    expect(result.lastCompletedStart).toBe(4)
+    // Setup bar 9 is at index 12
+    expect(result.lastCompletedEnd).toBe(12)
+  })
+
+  test('returns no lastCompleted fields when no setup completes', () => {
+    const bars = [bar(100, 105, 95), bar(101, 106, 96), bar(100, 105, 95)]
+    const result = computeSetup(bars)
+    expect(result.lastCompletedDirection).toBeUndefined()
+  })
+})
+
+// ─── computeTDST — sell setup ────────────────────────────────────────────────
+
+describe('computeTDST — sell setup', () => {
+  // Setup bars 0..8. Bars 0–3 highs: 10, 12, 11, 13 → TDST = 13
+  function sellBars(postBarClose?: number): Bar[] {
+    const setup = [
+      bar(8,  10, 5),  // bar 0 — high 10
+      bar(9,  12, 6),  // bar 1 — high 12
+      bar(10, 11, 7),  // bar 2 — high 11
+      bar(11, 13, 8),  // bar 3 — high 13 (max)
+      bar(12, 12, 7),  // bars 4–8: neutral
+      bar(11, 12, 7),
+      bar(12, 12, 7),
+      bar(11, 12, 7),
+      bar(12, 12, 7),  // bar 8 = setup end
+    ]
+    if (postBarClose !== undefined) setup.push(bar(postBarClose, postBarClose + 1, postBarClose - 1))
+    return setup
+  }
+
+  test('level = max high of bars 0–3', () => {
+    const result = computeTDST(sellBars(), makeSetup('sell', 0, 8))
+    expect(result).not.toBeNull()
+    expect(result!.level).toBe(13)
+  })
+
+  test('broken = false when post-setup closes stay at or below level', () => {
+    const result = computeTDST(sellBars(12), makeSetup('sell', 0, 8))
+    expect(result!.broken).toBe(false)
+  })
+
+  test('broken = true when post-setup close exceeds level', () => {
+    const result = computeTDST(sellBars(14), makeSetup('sell', 0, 8))
+    expect(result!.broken).toBe(true)
+  })
+
+  test('close exactly at level is not broken', () => {
+    const result = computeTDST(sellBars(13), makeSetup('sell', 0, 8))
+    expect(result!.broken).toBe(false)
+  })
+})
+
+// ─── computeTDST — buy setup ─────────────────────────────────────────────────
+
+describe('computeTDST — buy setup', () => {
+  // Bars 0–3 lows: 20, 18, 19, 17 → TDST = 17
+  function buyBars(postBarClose?: number): Bar[] {
+    const setup = [
+      bar(22, 30, 20),  // bar 0 — low 20
+      bar(21, 29, 18),  // bar 1 — low 18
+      bar(20, 28, 19),  // bar 2 — low 19
+      bar(19, 27, 17),  // bar 3 — low 17 (min)
+      bar(20, 28, 18),  // bars 4–8: neutral
+      bar(21, 29, 19),
+      bar(20, 28, 18),
+      bar(21, 29, 19),
+      bar(20, 28, 18),  // bar 8 = setup end
+    ]
+    if (postBarClose !== undefined) setup.push(bar(postBarClose, postBarClose + 1, postBarClose - 1))
+    return setup
+  }
+
+  test('level = min low of bars 0–3', () => {
+    const result = computeTDST(buyBars(), makeSetup('buy', 0, 8))
+    expect(result).not.toBeNull()
+    expect(result!.level).toBe(17)
+  })
+
+  test('broken = false when post-setup closes stay at or above level', () => {
+    const result = computeTDST(buyBars(18), makeSetup('buy', 0, 8))
+    expect(result!.broken).toBe(false)
+  })
+
+  test('broken = true when post-setup close falls below level', () => {
+    const result = computeTDST(buyBars(16), makeSetup('buy', 0, 8))
+    expect(result!.broken).toBe(true)
+  })
+
+  test('close exactly at level is not broken', () => {
+    const result = computeTDST(buyBars(17), makeSetup('buy', 0, 8))
+    expect(result!.broken).toBe(false)
+  })
+})
+
+// ─── computeTDST — edge cases ────────────────────────────────────────────────
+
+describe('computeTDST — edge cases', () => {
+  test('returns null when setup has no lastCompletedDirection', () => {
+    const setup: SetupState = { direction: 'none', count: 0, completed: false }
+    const result = computeTDST([], setup)
+    expect(result).toBeNull()
+  })
+
+  test('break check starts after bar 9, not before', () => {
+    // Buy setup bars 0–8. Bar 5 (before bar 9) has close 15 < 17,
+    // but post-bar-9 close is 18 — should NOT be broken.
+    const bars = [
+      bar(22, 30, 20),
+      bar(21, 29, 18),
+      bar(20, 28, 19),
+      bar(19, 27, 17),
+      bar(20, 28, 18),
+      bar(15, 16, 14),  // close 15 < 17, but this is BEFORE bar 9
+      bar(20, 28, 18),
+      bar(21, 29, 19),
+      bar(20, 28, 18),  // bar 8 = setup end
+      bar(18, 19, 17),  // post-setup close 18 ≥ 17 → not broken
+    ]
+    const result = computeTDST(bars, makeSetup('buy', 0, 8))
+    expect(result!.broken).toBe(false)
+  })
+})

@@ -3,3 +3,7 @@ dist/
 .env
 .vercel/
 .claude/
+TestLogs/
+
+.vercel
+.env*.local

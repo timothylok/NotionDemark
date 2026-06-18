@@ -20,6 +20,15 @@ export interface SetupState {
   direction: 'buy' | 'sell' | 'none'
   count: number
   completed: boolean
+  lastCompletedStart?: number
+  lastCompletedEnd?: number
+  lastCompletedDirection?: 'buy' | 'sell'
+}
+
+export interface TDSTLevel {
+  direction: 'buy' | 'sell'
+  level: number
+  broken: boolean
 }
 
 export interface CountdownState {
@@ -33,6 +42,7 @@ export interface TickerSignal {
   close: number
   setup: SetupState
   countdown: CountdownState
+  tdst: TDSTLevel | null
   avgCost: number
   pnlPct: number
   summary: string

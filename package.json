@@ -4,15 +4,23 @@
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "dev": "vercel dev"
+    "dev": "vercel dev",
+    "test": "jest"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.15",
     "yahoo-finance2": "2.11.3"
   },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node"
+  },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.0.0",
     "@vercel/node": "^3.0.0",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.11",
     "typescript": "^5.0.0",
     "vercel": "^33.0.0"
   }
