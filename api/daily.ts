@@ -6,8 +6,6 @@ import { computeAvgCost } from '../src/utils/groupLots'
 import { postSummary } from '../src/lib/discord'
 import type { TickerSignal } from '../src/types'
 
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
-
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   const lots = await getLots()
   const tickers = [...new Set(lots.map(l => l.ticker))]
@@ -18,7 +16,6 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     const avgCost = computeAvgCost(tickerLots)
 
     const bars = await getHistory(ticker)
-    await sleep(1500)
     const setup = computeSetup(bars)
     const countdown = computeCountdown(bars, setup)
 
