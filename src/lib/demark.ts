@@ -88,6 +88,57 @@ export function computeTDSTDistance(
   return { distancePct, status }
 }
 
+export function computeSignalStrength(
+  setup: { count: number; completed: boolean; direction: 'buy' | 'sell' | 'none' },
+  countdown: { count: number; completed: boolean },
+  trend: 'up' | 'down' | 'neutral',
+  tdstStatus?: 'near' | 'approaching' | 'far' | 'broken',
+): number {
+  const setupScore = Math.min((setup.count / 9) * 40 + (setup.completed ? 10 : 0), 40)
+  const countdownScore = Math.min((countdown.count / 13) * 40 + (countdown.completed ? 10 : 0), 40)
+
+  let tdstScore = 0
+  if (tdstStatus === 'broken') tdstScore = -20
+  else if (tdstStatus === 'near') tdstScore = 20
+  else if (tdstStatus === 'approaching') tdstScore = 10
+
+  let trendScore = 0
+  if (trend === 'up'   && setup.direction === 'sell') trendScore = 20
+  if (trend === 'down' && setup.direction === 'buy')  trendScore = 20
+  if (trend === 'up'   && setup.direction === 'buy')  trendScore = -10
+  if (trend === 'down' && setup.direction === 'sell') trendScore = -10
+
+  return Math.round(Math.max(0, Math.min(setupScore + countdownScore + tdstScore + trendScore, 100)))
+}
+
+export function computeReversalProbability(
+  score: number,
+  trend: 'up' | 'down' | 'neutral',
+  direction: 'buy' | 'sell' | 'none',
+  setupCompleted: boolean,
+  countdownCompleted: boolean,
+  tdstStatus?: 'near' | 'approaching' | 'far' | 'broken',
+): number {
+  if (direction === 'none') return 0
+
+  let p = score / 100
+
+  if (trend === 'up'   && direction === 'sell') p *= 1.25
+  if (trend === 'down' && direction === 'buy')  p *= 1.25
+  if (trend === 'up'   && direction === 'buy')  p *= 0.75
+  if (trend === 'down' && direction === 'sell') p *= 0.75
+
+  if      (tdstStatus === 'near')        p *= 1.25
+  else if (tdstStatus === 'approaching') p *= 1.10
+  else if (tdstStatus === 'far')         p *= 0.90
+  else if (tdstStatus === 'broken')      p *= 0.50
+
+  if (setupCompleted)     p += 0.05
+  if (countdownCompleted) p += 0.10
+
+  return Number(Math.max(0, Math.min(p, 1)).toFixed(2))
+}
+
 export function computeCountdown(bars: Bar[], setup: SetupState): CountdownState {
   if (!setup.completed) {
     return { direction: 'none', count: 0, completed: false }

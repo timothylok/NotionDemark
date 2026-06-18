@@ -58,6 +58,8 @@ export interface TickerSignal {
   tdst: TDSTLevel | null
   tdstDistancePct?: number
   tdstStatus?: 'near' | 'approaching' | 'far' | 'broken'
+  signalStrength: number
+  reversalProbability: number
   trend: 'up' | 'down' | 'neutral'
   delta: SignalDelta | null
   avgCost: number

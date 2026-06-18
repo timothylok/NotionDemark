@@ -32,9 +32,14 @@ export async function postSummary(signals: TickerSignal[]): Promise<void> {
     const trendLabel = s.trend === 'up' ? 'Up' : s.trend === 'down' ? 'Down' : 'Neutral'
     const trendSuffix = d?.trendChanged ? `  (was ${d.prevTrend})` : ''
 
+    const score = s.signalStrength
+    const scoreLabel = score >= 80 ? 'High Conviction' : score >= 60 ? 'Strong' : score >= 30 ? 'Moderate' : 'Low'
+    const scoreDir = s.setup.direction !== 'none' ? ` ${s.setup.direction === 'buy' ? 'Buy' : 'Sell'}` : ''
+
     return (
-      `${s.ticker}: Close ${s.close.toFixed(2)} (${s.pnlPct.toFixed(2)}%) vs Avg ${s.avgCost.toFixed(2)}\n` +
+      `${s.ticker} [${score}/100 – ${scoreLabel}${scoreDir}]: Close ${s.close.toFixed(2)} (${s.pnlPct.toFixed(2)}%) vs Avg ${s.avgCost.toFixed(2)}\n` +
       `  • Trend: ${trendLabel}${trendSuffix}\n` +
+      `  • P(reversal): ${s.reversalProbability.toFixed(2)}\n` +
       `  • Setup: ${s.setup.direction} ${s.setup.count}/9${setupSuffix}\n` +
       `  • Countdown: ${s.countdown.count}/13${countdownSuffix}` +
       tdstLine

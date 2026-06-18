@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { getLots, insertDailySignal } from '../src/lib/notion'
 import { getHistory } from '../src/lib/prices'
-import { computeSetup, computeCountdown, computeTDST, computeTDSTDistance, ema, classifyTrend } from '../src/lib/demark'
+import { computeSetup, computeCountdown, computeTDST, computeTDSTDistance, computeSignalStrength, computeReversalProbability, ema, classifyTrend } from '../src/lib/demark'
 import { computeAvgCost } from '../src/utils/groupLots'
 import { postSummary } from '../src/lib/discord'
 import type { TickerSignal, SignalDelta } from '../src/types'
@@ -61,11 +61,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const pnlPct = avgCost === 0 ? 0 : ((close - avgCost) / avgCost) * 100
 
     const tdstDist = tdst ? computeTDSTDistance(tdst.direction, close, tdst.level, tdst.broken) : null
+    const signalStrength = computeSignalStrength(setup, countdown, trend, tdstDist?.status)
+    const reversalProbability = computeReversalProbability(
+      signalStrength, trend, setup.direction,
+      setup.completed, countdown.completed, tdstDist?.status
+    )
     const signal: TickerSignal = {
       ticker, close, setup, countdown, tdst,
       tdstDistancePct: tdstDist?.distancePct,
       tdstStatus: tdstDist?.status,
-      trend, delta, avgCost, pnlPct, summary: '',
+      signalStrength, reversalProbability, trend, delta, avgCost, pnlPct, summary: '',
     }
 
     await insertDailySignal(signal)

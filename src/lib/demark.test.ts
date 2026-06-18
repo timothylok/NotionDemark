@@ -1,4 +1,4 @@
-import { computeSetup, computeTDST, computeTDSTDistance } from './demark'
+import { computeSetup, computeTDST, computeTDSTDistance, computeSignalStrength, computeReversalProbability } from './demark'
 import { Bar, SetupState } from '../types'
 
 function bar(close: number, high: number, low: number): Bar {
@@ -186,6 +186,91 @@ describe('computeTDSTDistance', () => {
     const r = computeTDSTDistance('sell', 97, 100, false)
     expect(r.distancePct).toBeCloseTo(3)
     expect(r.status).toBe('far')
+  })
+})
+
+// ─── computeSignalStrength ───────────────────────────────────────────────────
+
+describe('computeSignalStrength', () => {
+  const fullSetup = { count: 9, completed: true, direction: 'sell' as const }
+  const fullCountdown = { count: 13, completed: true }
+  const noSetup = { count: 0, completed: false, direction: 'none' as const }
+  const noCountdown = { count: 0, completed: false }
+
+  test('maximum inputs → high conviction (≥80)', () => {
+    // setup 40 + countdown 40 + TDST near 20 + trend opposing 20 = 120 → clamped 100
+    const score = computeSignalStrength(fullSetup, fullCountdown, 'up', 'near')
+    expect(score).toBe(100)
+  })
+
+  test('TDST broken reduces score significantly', () => {
+    const withBroken  = computeSignalStrength(fullSetup, fullCountdown, 'up', 'broken')
+    const withNear    = computeSignalStrength(fullSetup, fullCountdown, 'up', 'near')
+    expect(withBroken).toBeLessThan(withNear)
+    // setup 40 + countdown 40 + TDST -20 + trend 20 = 80
+    expect(withBroken).toBe(80)
+  })
+
+  test('no setup or countdown → low score', () => {
+    const score = computeSignalStrength(noSetup, noCountdown, 'neutral', undefined)
+    expect(score).toBe(0)
+  })
+
+  test('aligned trend (buy in uptrend) penalised vs opposing', () => {
+    const setup = { count: 9, completed: true, direction: 'buy' as const }
+    const opposing = computeSignalStrength(setup, noCountdown, 'down', undefined)
+    const aligned  = computeSignalStrength(setup, noCountdown, 'up',   undefined)
+    expect(opposing).toBeGreaterThan(aligned)
+    // opposing: 40 + 0 + 0 + 20 = 60; aligned: 40 + 0 + 0 - 10 = 30
+    expect(opposing).toBe(60)
+    expect(aligned).toBe(30)
+  })
+
+  test('absent TDST contributes 0', () => {
+    const withNone    = computeSignalStrength(fullSetup, noCountdown, 'neutral', undefined)
+    const withApproaching = computeSignalStrength(fullSetup, noCountdown, 'neutral', 'approaching')
+    expect(withApproaching).toBeGreaterThan(withNone)
+    expect(withNone).toBe(40)
+    expect(withApproaching).toBe(50)
+  })
+})
+
+// ─── computeReversalProbability ──────────────────────────────────────────────
+
+describe('computeReversalProbability', () => {
+  test('direction none → returns 0', () => {
+    expect(computeReversalProbability(80, 'up', 'none', true, true, 'near')).toBe(0)
+  })
+
+  test('full opposing signals → clamped to 1', () => {
+    // score=100 → p=1.0, ×1.25 (opposing), ×1.25 (near), +0.05, +0.10 → >>1 → clamp 1
+    const p = computeReversalProbability(100, 'up', 'sell', true, true, 'near')
+    expect(p).toBe(1)
+  })
+
+  test('TDST broken halves probability vs TDST near', () => {
+    const base = 60
+    const withNear   = computeReversalProbability(base, 'neutral', 'sell', false, false, 'near')
+    const withBroken = computeReversalProbability(base, 'neutral', 'sell', false, false, 'broken')
+    expect(withNear).toBeGreaterThan(withBroken)
+    // near: 0.6 × 1.25 = 0.75; broken: 0.6 × 0.50 = 0.30
+    expect(withNear).toBeCloseTo(0.75, 2)
+    expect(withBroken).toBeCloseTo(0.30, 2)
+  })
+
+  test('aligned trend reduces vs opposing', () => {
+    const opposing = computeReversalProbability(60, 'down', 'buy',  false, false, undefined)
+    const aligned  = computeReversalProbability(60, 'up',   'buy',  false, false, undefined)
+    expect(opposing).toBeGreaterThan(aligned)
+    // opposing: 0.6 × 1.25 = 0.75; aligned: 0.6 × 0.75 = 0.45
+    expect(opposing).toBeCloseTo(0.75, 2)
+    expect(aligned).toBeCloseTo(0.45, 2)
+  })
+
+  test('no TDST → no multiplier (neutral)', () => {
+    const withNone = computeReversalProbability(60, 'neutral', 'sell', false, false, undefined)
+    // 0.6, no trend adj, no TDST adj → 0.60
+    expect(withNone).toBeCloseTo(0.60, 2)
   })
 })
 
