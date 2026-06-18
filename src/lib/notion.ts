@@ -48,8 +48,7 @@ export async function insertDailySignal(signal: TickerSignal): Promise<void> {
   await notion.pages.create({
     parent: { database_id: process.env.NOTION_DAILY_DB_ID! },
     properties: {
-      Name: { title: [{ text: { content: `${signal.ticker} ${today}` } }] },
-      Date: { date: { start: today } },
+      Date: { title: [{ text: { content: `${signal.ticker} ${today}` } }] },
       Ticker: { select: { name: signal.ticker } },
       'Close Price': { number: signal.close },
       Setup: { rich_text: [{ text: { content: `${signal.setup.direction} ${signal.setup.count}/9` } }] },
