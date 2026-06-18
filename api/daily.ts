@@ -6,7 +6,11 @@ import { computeAvgCost } from '../src/utils/groupLots'
 import { postSummary } from '../src/lib/discord'
 import type { TickerSignal } from '../src/types'
 
-export default async function handler(_req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
   const lots = await getLots()
   const tickers = [...new Set(lots.map(l => l.ticker))]
   const signals: TickerSignal[] = []
