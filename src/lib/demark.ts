@@ -57,6 +57,23 @@ export function computeTDST(bars: Bar[], setup: SetupState): TDSTLevel | null {
   return { direction: dir, level, broken }
 }
 
+export function ema(values: number[], period: number): number[] {
+  const k = 2 / (period + 1)
+  const result = [values[0]]
+  for (let i = 1; i < values.length; i++) {
+    result.push(values[i] * k + result[i - 1] * (1 - k))
+  }
+  return result
+}
+
+export function classifyTrend(
+  price: number, ema20: number, ema50: number
+): 'up' | 'down' | 'neutral' {
+  if (ema20 > ema50 && price > ema20) return 'up'
+  if (ema20 < ema50 && price < ema20) return 'down'
+  return 'neutral'
+}
+
 export function computeCountdown(bars: Bar[], setup: SetupState): CountdownState {
   if (!setup.completed) {
     return { direction: 'none', count: 0, completed: false }

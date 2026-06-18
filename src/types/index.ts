@@ -43,9 +43,11 @@ export interface SignalDelta {
   countdownChanged: boolean
   countdownCompleted: boolean
   tdstNewlyBroken: boolean
+  trendChanged: boolean
   prevSetupDirection: 'buy' | 'sell' | 'none'
   prevSetupCount: number
   prevCountdownCount: number
+  prevTrend: 'up' | 'down' | 'neutral'
 }
 
 export interface TickerSignal {
@@ -54,6 +56,7 @@ export interface TickerSignal {
   setup: SetupState
   countdown: CountdownState
   tdst: TDSTLevel | null
+  trend: 'up' | 'down' | 'neutral'
   delta: SignalDelta | null
   avgCost: number
   pnlPct: number

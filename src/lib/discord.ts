@@ -27,8 +27,12 @@ export async function postSummary(signals: TickerSignal[]): Promise<void> {
       tdstStatus = `\n  • TDST ${label}: ${s.tdst.level.toFixed(2)} (${status}, dist ${dist}%)`
     }
 
+    const trendLabel = s.trend === 'up' ? 'Up' : s.trend === 'down' ? 'Down' : 'Neutral'
+    const trendSuffix = d?.trendChanged ? `  (was ${d.prevTrend})` : ''
+
     return (
       `${s.ticker}: Close ${s.close.toFixed(2)} (${s.pnlPct.toFixed(2)}%) vs Avg ${s.avgCost.toFixed(2)}\n` +
+      `  • Trend: ${trendLabel}${trendSuffix}\n` +
       `  • Setup: ${s.setup.direction} ${s.setup.count}/9${setupSuffix}\n` +
       `  • Countdown: ${s.countdown.count}/13${countdownSuffix}` +
       tdstStatus
