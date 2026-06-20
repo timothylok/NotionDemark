@@ -16,6 +16,12 @@ export async function postAlerts(allAlerts: { ticker: string; alerts: string[] }
 }
 
 export async function postSummary(signals: TickerSignal[]): Promise<void> {
+  const avgPnl = signals.reduce((sum, s) => sum + s.pnlPct, 0) / signals.length
+  const top = signals.reduce((a, b) => a.signalStrength >= b.signalStrength ? a : b)
+  const weakest = signals.reduce((a, b) => a.signalStrength <= b.signalStrength ? a : b)
+  const pnlStr = `${avgPnl >= 0 ? '+' : ''}${avgPnl.toFixed(2)}%`
+  const header = `US Portfolio – DeMark Daily\nPortfolio PnL: ${pnlStr} | Top signal: ${top.ticker} (${top.signalStrength}/100) | Weakest: ${weakest.ticker} (${weakest.signalStrength}/100)`
+
   const lines = signals.map(s => {
     const d = s.delta
 
@@ -69,7 +75,7 @@ export async function postSummary(signals: TickerSignal[]): Promise<void> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      content: `US Portfolio – DeMark Daily\n\n${lines.join('\n\n')}`,
+      content: `${header}\n\n${lines.join('\n\n')}`,
     }),
   })
 }

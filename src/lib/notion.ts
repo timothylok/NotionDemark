@@ -55,6 +55,8 @@ export async function insertDailySignal(signal: TickerSignal): Promise<void> {
       Countdown: { rich_text: [{ text: { content: `${signal.countdown.count}/13` } }] },
       'Avg Cost': { number: signal.avgCost },
       'PnL %': { number: signal.pnlPct / 100 },
+      'ATR %': { number: parseFloat(signal.atrPct.toFixed(2)) },
+      Volatility: { select: { name: signal.volatility } },
       Summary: { rich_text: [{ text: { content: signal.summary } }] },
     },
   })
