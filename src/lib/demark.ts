@@ -31,7 +31,7 @@ export function computeSetup(bars: Bar[]): SetupState {
 
   const result: SetupState = {
     direction: buyCount > 0 ? 'buy' : sellCount > 0 ? 'sell' : 'none',
-    count: buyCount > 0 ? buyCount : sellCount,
+    count: Math.min(buyCount > 0 ? buyCount : sellCount, 9),
     completed: buyCount >= 9 || sellCount >= 9,
   }
   if (lastCompletedDirection !== null) {
