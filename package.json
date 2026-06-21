@@ -1,27 +1,37 @@
 {
-  "name": "notion-demark",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "typecheck": "tsc --noEmit",
-    "dev": "vercel dev",
-    "test": "jest"
-  },
-  "dependencies": {
-    "@notionhq/client": "^2.2.15",
-    "yahoo-finance2": "2.11.3"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node"
-  },
-  "devDependencies": {
-    "@types/jest": "^30.0.0",
-    "@types/node": "^20.0.0",
-    "@vercel/node": "^3.0.0",
-    "jest": "^30.4.2",
-    "ts-jest": "^29.4.11",
-    "typescript": "^5.0.0",
-    "vercel": "^33.0.0"
-  }
+    "name":  "notion-demark",
+    "version":  "1.0.0",
+    "private":  true,
+    "scripts":  {
+                    "typecheck":  "tsc --noEmit",
+                    "dev":  "vercel dev",
+                    "test":  "jest",
+                    "build":  "next build"
+                },
+    "dependencies":  {
+                         "@notionhq/client":  "^2.2.15",
+                         "next":  "^16.2.9",
+                         "react":  "^19.2.7",
+                         "react-dom":  "^19.2.7",
+                         "yahoo-finance2":  "2.11.3"
+                     },
+    "jest":  {
+                 "preset":  "ts-jest",
+                 "testEnvironment":  "node"
+             },
+    "devDependencies":  {
+                            "@tailwindcss/postcss":  "^4.3.1",
+                            "@types/jest":  "^30.0.0",
+                            "@types/node":  "^20.0.0",
+                            "@types/react":  "^19.2.17",
+                            "@types/react-dom":  "^19.2.3",
+                            "@vercel/node":  "^3.0.0",
+                            "autoprefixer":  "^10.5.0",
+                            "jest":  "^30.4.2",
+                            "postcss":  "^8.5.15",
+                            "tailwindcss":  "^4.3.1",
+                            "ts-jest":  "^29.4.11",
+                            "typescript":  "^5.0.0",
+                            "vercel":  "^33.0.0"
+                        }
 }

@@ -4,6 +4,7 @@ dist/
 .vercel/
 .claude/
 TestLogs/
+.next/
 
 .vercel
 .env*.local

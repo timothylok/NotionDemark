@@ -1,14 +1,14 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { Client } from '@notionhq/client'
-import { getLots } from '../src/lib/notion'
-import { getHistory } from '../src/lib/prices'
+import { getLots } from '../../src/lib/notion'
+import { getHistory } from '../../src/lib/prices'
 import {
   computeSetup, computeCountdown, computeTDST, computeTDSTDistance,
   computeSignalStrength, computeReversalProbability,
   computeATR, classifyVolatility, ema, classifyTrend,
-} from '../src/lib/demark'
-import { computeAvgCost } from '../src/utils/groupLots'
-import type { TickerSignal } from '../src/types'
+} from '../../src/lib/demark'
+import { computeAvgCost } from '../../src/utils/groupLots'
+import type { TickerSignal } from '../../src/types'
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
 
@@ -24,6 +24,12 @@ async function upsertSignal(signal: TickerSignal, date: string): Promise<'insert
     'ATR %': { number: parseFloat(signal.atrPct.toFixed(2)) },
     Volatility: { select: { name: signal.volatility } },
     Summary: { rich_text: [{ text: { content: signal.summary } }] },
+    Trend: { select: { name: signal.trend } },
+    'Setup Direction': { select: { name: signal.setup.direction } },
+    'Setup Count': { number: signal.setup.count },
+    'Signal Strength': { number: signal.signalStrength },
+    'TDST Distance %': { number: signal.tdstDistancePct != null ? parseFloat(signal.tdstDistancePct.toFixed(2)) : 0 },
+    'TDST Status': { select: { name: signal.tdstStatus ?? 'far' } },
   }
 
   const existing = await notion.databases.query({
@@ -43,7 +49,7 @@ async function upsertSignal(signal: TickerSignal, date: string): Promise<'insert
   return 'inserted'
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ error: 'Unauthorized' })
   }

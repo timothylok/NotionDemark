@@ -29,7 +29,7 @@ Daily TD DeMark signal engine for a personal US stock portfolio.
 
 ---
 
-## Task 1 — Portfolio Summary Header  *(~30 min)*
+## ~~Task 1 — Portfolio Summary Header~~ ✓ DONE (2026-06-20)
 
 **Start new session:** Yes — isolated change to `discord.ts` only.
 
@@ -53,7 +53,7 @@ Add a header line to the daily Discord summary showing portfolio-level stats bef
 
 ---
 
-## Task 2 — Notion Schema Extensions  *(~20 min)*
+## ~~Task 2 — Notion Schema Extensions~~ ✓ DONE (2026-06-20)
 
 **Start new session:** No — group with Task 1 (same session, small change).
 
@@ -72,7 +72,7 @@ Persist `atrPct` and `volatility` into the Notion Daily Signals DB so historical
 
 ---
 
-## Task 3 — Weekly Summary Engine  *(~1–2 hrs)*
+## ~~Task 3 — Weekly Summary Engine~~ ✓ DONE (2026-06-20)
 
 **Start new session:** Yes — new endpoint, new file, self-contained.
 
@@ -97,7 +97,7 @@ Add `/api/weekly` — a separate Vercel handler that queries the last 5 trading 
 
 ---
 
-## Task 4 — Backfill Mode  *(~1 hr)*
+## ~~Task 4 — Backfill Mode~~ ✓ DONE (2026-06-20)
 
 **Start new session:** Yes — new endpoint, self-contained.
 
@@ -120,7 +120,7 @@ Add `/api/backfill?days=N` to replay the daily pipeline for the last N trading d
 
 ---
 
-## Task 5 — DeMark Engine v4 Refactor  *(~1.5 hrs)*
+## ~~Task 5 — DeMark Engine v4 Refactor~~ ✓ DONE (2026-06-20)
 
 **Start new session:** Yes — refactor of `demark.ts`, high test-coverage requirement.
 
@@ -145,7 +145,7 @@ Consolidate all per-ticker computation into a single exported function `computeS
 
 | # | Task | Session | Effort |
 |---|------|---------|--------|
-| 1 | Portfolio Summary Header + Notion Schema Extensions | One session | ~45 min |
-| 2 | Weekly Summary Engine | New session | ~1.5 hrs |
-| 3 | Backfill Mode | New session | ~1 hr |
-| 4 | DeMark Engine v4 Refactor | New session | ~1.5 hrs |
+| 1 | ~~Portfolio Summary Header + Notion Schema Extensions~~ | ✓ DONE | 2026-06-20 |
+| 2 | ~~Weekly Summary Engine~~ | ✓ DONE | 2026-06-20 |
+| 3 | ~~Backfill Mode~~ | ✓ DONE | 2026-06-20 |
+| 4 | ~~DeMark Engine v4 Refactor~~ | ✓ DONE | 2026-06-20 |

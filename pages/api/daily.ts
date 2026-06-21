@@ -1,11 +1,12 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { getLots, insertDailySignal } from '../src/lib/notion'
-import { getHistory } from '../src/lib/prices'
-import { computeSignal, computeAlerts } from '../src/lib/demark'
-import { postSummary, postAlerts } from '../src/lib/discord'
-import type { TickerSignal } from '../src/types'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { getLots, insertDailySignal } from '../../src/lib/notion'
+import { getHistory } from '../../src/lib/prices'
+import { computeSignal, computeAlerts } from '../../src/lib/demark'
+import { postSummary, postAlerts } from '../../src/lib/discord'
+import { triggerDeploy } from '../../src/lib/deploy'
+import type { TickerSignal } from '../../src/types'
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
@@ -26,6 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   await postAlerts(allAlerts)
   await postSummary(signals)
+  await triggerDeploy()
 
   res.status(200).json({ ok: true })
 }

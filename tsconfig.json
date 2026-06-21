@@ -3,10 +3,42 @@
     "target": "ES2020",
     "module": "CommonJS",
     "moduleResolution": "node",
+    "lib": [
+      "ES2020",
+      "dom",
+      "dom.iterable"
+    ],
+    "jsx": "react-jsx",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
+    "allowJs": true,
+    "noEmit": true,
+    "incremental": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
-  "include": ["api/**/*", "src/**/*"]
+  "include": [
+    "api/**/*",
+    "src/**/*",
+    "pages/**/*",
+    "app/**/*",
+    "lib/**/*",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

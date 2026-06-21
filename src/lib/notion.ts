@@ -58,6 +58,12 @@ export async function insertDailySignal(signal: TickerSignal): Promise<void> {
       'ATR %': { number: parseFloat(signal.atrPct.toFixed(2)) },
       Volatility: { select: { name: signal.volatility } },
       Summary: { rich_text: [{ text: { content: signal.summary } }] },
+      Trend: { select: { name: signal.trend } },
+      'Setup Direction': { select: { name: signal.setup.direction } },
+      'Setup Count': { number: signal.setup.count },
+      'Signal Strength': { number: signal.signalStrength },
+      'TDST Distance %': { number: signal.tdstDistancePct != null ? parseFloat(signal.tdstDistancePct.toFixed(2)) : 0 },
+      'TDST Status': { select: { name: signal.tdstStatus ?? 'far' } },
     },
   })
 }
