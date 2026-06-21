@@ -30,19 +30,8 @@ function num(page: any, prop: string): number {
   return page.properties[prop]?.number ?? 0
 }
 
-export async function getDailySignals(date?: string): Promise<DailyRow[]> {
-  const today = date ?? new Date().toISOString().slice(0, 10)
-
-  const res = await notion.databases.query({
-    database_id: process.env.NOTION_DAILY_DB_ID!,
-    filter: {
-      property: 'Date',
-      title: { contains: today },
-    } as any,
-    sorts: [{ property: 'Signal Strength', direction: 'descending' }],
-  })
-
-  return (res.results as any[]).flatMap(page => {
+function parseRows(results: any[]): DailyRow[] {
+  return results.flatMap(page => {
     const title = str(page, 'Date')
     const spaceIdx = title.indexOf(' ')
     if (spaceIdx === -1) return []
@@ -64,4 +53,28 @@ export async function getDailySignals(date?: string): Promise<DailyRow[]> {
       tdstStatus: (str(page, 'TDST Status') || 'far') as DailyRow['tdstStatus'],
     }]
   })
+}
+
+export async function getDailySignals(date?: string): Promise<DailyRow[]> {
+  if (date) {
+    const res = await notion.databases.query({
+      database_id: process.env.NOTION_DAILY_DB_ID!,
+      filter: { property: 'Date', title: { contains: date } } as any,
+      sorts: [{ property: 'Signal Strength', direction: 'descending' }],
+    })
+    return parseRows(res.results)
+  }
+
+  // No date specified — fetch recent rows and return the latest trading day's batch
+  const res = await notion.databases.query({
+    database_id: process.env.NOTION_DAILY_DB_ID!,
+    page_size: 50,
+    sorts: [{ property: 'Signal Strength', direction: 'descending' }],
+  })
+
+  const rows = parseRows(res.results as any[])
+  if (!rows.length) return []
+
+  const latestDate = rows.reduce((max, r) => (r.date > max ? r.date : max), '')
+  return rows.filter(r => r.date === latestDate)
 }
