@@ -4,10 +4,11 @@ import { getHistory } from '../../src/lib/prices'
 import { computeSignal, computeAlerts } from '../../src/lib/demark'
 import { postSummary, postAlerts } from '../../src/lib/discord'
 import { triggerDeploy } from '../../src/lib/deploy'
+import { checkSecret } from '../../src/lib/auth'
 import type { TickerSignal } from '../../src/types'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!checkSecret(req.headers.authorization)) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
 

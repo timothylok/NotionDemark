@@ -34,5 +34,8 @@
         "ts-jest": "^29.4.11",
         "typescript": "^5.0.0",
         "vercel": "^33.0.0"
+    },
+    "overrides": {
+        "path-to-regexp": "^6.3.0"
     }
 }
