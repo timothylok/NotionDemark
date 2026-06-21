@@ -1,6 +1,5 @@
-export async function triggerDeploy(): Promise<'fired' | 'no-url'> {
+export async function triggerDeploy(): Promise<void> {
   const url = process.env.VERCEL_DEPLOY_HOOK_URL
-  if (!url) return 'no-url'
+  if (!url) return
   await fetch(url, { method: 'POST' })
-  return 'fired'
 }

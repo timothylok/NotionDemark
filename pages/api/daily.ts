@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   await postAlerts(allAlerts)
   await postSummary(signals)
-  const deployStatus = await triggerDeploy()
+  await triggerDeploy()
 
-  res.status(200).json({ ok: true, deployHook: deployStatus })
+  res.status(200).json({ ok: true })
 }
