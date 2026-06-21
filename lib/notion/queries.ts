@@ -76,5 +76,6 @@ export async function getDailySignals(date?: string): Promise<DailyRow[]> {
   if (!rows.length) return []
 
   const latestDate = rows.reduce((max, r) => (r.date > max ? r.date : max), '')
-  return rows.filter(r => r.date === latestDate)
+  const seen = new Set<string>()
+  return rows.filter(r => r.date === latestDate && !seen.has(r.ticker) && (seen.add(r.ticker), true))
 }

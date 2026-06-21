@@ -56,8 +56,22 @@
 - Created 6 dashboard components: NewSignalsTable, TopBuys, TopSells, TrendHeatmap, TDSTRisk, SystemHealth
 - Next.js auto-updated tsconfig.json (jsx: react-jsx, isolatedModules, noEmit, resolveJsonModule)
 - Build: ✓ compiles, 39/39 tests pass; dashboard route is static, API routes are dynamic
-- Pending (user actions required):
-  1. Manually add 6 Notion columns to Daily Signals DB (Trend select, Setup Direction select, Setup Count number, Signal Strength number, TDST Distance % number, TDST Status select)
-  2. Add VERCEL_DEPLOY_HOOK_URL to Vercel env vars (create deploy hook in Vercel dashboard → Settings → Git → Deploy Hooks)
-  3. Delete old `api/` root directory (now replaced by `pages/api/`) — `! rm -rf api/` in terminal
-  4. Run `/api/backfill?days=5` after adding Notion columns to backfill the new fields for existing rows
+- Fixed Vercel deployment: replaced vercel.json with vercel.ts (@vercel/config) to set framework: nextjs — dashboard was 404 without this
+- Fixed empty dashboard on weekends: getDailySignals() now falls back to latest available trading day instead of hardcoding today
+- Ran backfill twice: first run used old code (pre-deploy), second run after deploy populated all 6 new Notion fields on 25 rows (5 tickers × 5 days)
+- Dashboard live and showing signals at /dashboard
+- Deploy hook wired up and verified: `VERCEL_DEPLOY_HOOK_URL` set in Vercel env, `triggerDeploy()` confirmed firing (`deployHook: "fired"` in response), new deployment appeared in Vercel dashboard within 30s
+
+## 2026-06-21
+- Verified dashboard live with real data after backfill populated 6 new Notion fields
+- Security hardening:
+  - Replaced `!==` secret comparison with `crypto.timingSafeEqual` across all 3 handlers (`src/lib/auth.ts`)
+  - Added npm override to pin `path-to-regexp >= 6.3.0` (GHSA-9wv6-86v2-598j ReDoS)
+  - Investigated `vercel@latest` and `@vercel/node@latest` upgrades — both made audit worse (more transitive deps), rolled back to v33/v3
+  - Opened GitHub issues #1, #2, #3 to track remaining audit findings
+  - Removed `deployHook` debug field from `/api/daily` response
+- Audit standing: 38 vulns (2 low, 30 moderate, 6 high) — all 6 highs in devDeps only, not deployed
+- Fixed duplicate records on /dashboard:
+  - `insertDailySignal` (src/lib/notion.ts) now upserts: queries by exact title before insert, updates existing page if found
+  - `getDailySignals` (lib/notion/queries.ts) deduplicates by ticker on read using a Set (first/highest signal strength wins)
+- Next: existing duplicate Notion pages remain in DB (harmless, suppressed by query dedup); future cron runs will upsert cleanly

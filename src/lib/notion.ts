@@ -44,26 +44,37 @@ export async function getLots(): Promise<Lot[]> {
 
 export async function insertDailySignal(signal: TickerSignal): Promise<void> {
   const today = new Date().toISOString().slice(0, 10)
+  const title = `${signal.ticker} ${today}`
 
-  await notion.pages.create({
-    parent: { database_id: process.env.NOTION_DAILY_DB_ID! },
-    properties: {
-      Date: { title: [{ text: { content: `${signal.ticker} ${today}` } }] },
-      Ticker: { select: { name: signal.ticker } },
-      'Close Price': { number: signal.close },
-      Setup: { rich_text: [{ text: { content: `${signal.setup.direction} ${signal.setup.count}/9` } }] },
-      Countdown: { rich_text: [{ text: { content: `${signal.countdown.count}/13` } }] },
-      'Avg Cost': { number: signal.avgCost },
-      'PnL %': { number: signal.pnlPct / 100 },
-      'ATR %': { number: parseFloat(signal.atrPct.toFixed(2)) },
-      Volatility: { select: { name: signal.volatility } },
-      Summary: { rich_text: [{ text: { content: signal.summary } }] },
-      Trend: { select: { name: signal.trend } },
-      'Setup Direction': { select: { name: signal.setup.direction } },
-      'Setup Count': { number: signal.setup.count },
-      'Signal Strength': { number: signal.signalStrength },
-      'TDST Distance %': { number: signal.tdstDistancePct != null ? parseFloat(signal.tdstDistancePct.toFixed(2)) : 0 },
-      'TDST Status': { select: { name: signal.tdstStatus ?? 'far' } },
-    },
+  const properties: Record<string, any> = {
+    Ticker: { select: { name: signal.ticker } },
+    'Close Price': { number: signal.close },
+    Setup: { rich_text: [{ text: { content: `${signal.setup.direction} ${signal.setup.count}/9` } }] },
+    Countdown: { rich_text: [{ text: { content: `${signal.countdown.count}/13` } }] },
+    'Avg Cost': { number: signal.avgCost },
+    'PnL %': { number: signal.pnlPct / 100 },
+    'ATR %': { number: parseFloat(signal.atrPct.toFixed(2)) },
+    Volatility: { select: { name: signal.volatility } },
+    Summary: { rich_text: [{ text: { content: signal.summary } }] },
+    Trend: { select: { name: signal.trend } },
+    'Setup Direction': { select: { name: signal.setup.direction } },
+    'Setup Count': { number: signal.setup.count },
+    'Signal Strength': { number: signal.signalStrength },
+    'TDST Distance %': { number: signal.tdstDistancePct != null ? parseFloat(signal.tdstDistancePct.toFixed(2)) : 0 },
+    'TDST Status': { select: { name: signal.tdstStatus ?? 'far' } },
+  }
+
+  const existing = await notion.databases.query({
+    database_id: process.env.NOTION_DAILY_DB_ID!,
+    filter: { property: 'Date', title: { equals: title } } as any,
   })
+
+  if (existing.results.length > 0) {
+    await notion.pages.update({ page_id: (existing.results[0] as any).id, properties })
+  } else {
+    await notion.pages.create({
+      parent: { database_id: process.env.NOTION_DAILY_DB_ID! },
+      properties: { Date: { title: [{ text: { content: title } }] }, ...properties },
+    })
+  }
 }
